@@ -1,0 +1,90 @@
+     1                                  ; Let's run a 32-bit program in Ubuntu! 
+     2                                  
+     3                                  ; Install NASM in Ubuntu: 
+     4                                  ; 	sudo apt install nasm
+     5                                  
+     6                                  ; Create this code file 
+     7                                  
+     8                                  ; Assemble: 
+     9                                  ; 	nasm -f elf32 -l c05-01.lst -o c05-01.o c05-01.asm 
+    10                                  ; 
+    11                                  ; 	We want to create a format that Linux understand
+    12                                  ;	i.e. ELF format in 32-bits 
+    13                                  ; 	(we also create a listing file)
+    14                                  ;   Read more about ELF here: https://linux-audit.com/elf-binaries-on-linux-understanding-and-analysis/ 
+    15                                  
+    16                                  ; Link with shared library that 'understands' the format: ld.so in Linux 
+    17                                  ; 	ld -m elf_i386 -o c05-01 c05-01.o
+    18                                  
+    19                                  ; Run it: 
+    20                                  ; 	./c05-01 
+    21                                  
+    22                                  
+    23                                  
+    24                                  ; Now let's discuss the code! 
+    25                                  
+    26                                  ; in modern OSs, programs do not start executing 
+    27                                  ; "from the first instruction"
+    28                                  
+    29                                  ; Instead, there is a library (ld.so) that looks for the "start symbol"
+    30                                  ; and executes from there. 
+    31                                  
+    32                                  
+    33                                  ; a section "directive" marks the parts of a program 
+    34                                  ; for the ELF format  (or whatever binary format you are using)
+    35                                  SECTION .text: 
+    36                                  
+    37                                  ; We mark the start for this library using the following: 
+    38                                  GLOBAL _start 
+    39                                  
+    40                                  _start: 
+    41                                  	; write the string to console 
+    42 00000000 B804000000              	mov eax, 0x4 				; write syscall is 0x4 
+    43 00000005 BB01000000              	mov ebx, 1 					; param - std output should be used 
+    44 0000000A B9[00000000]            	mov ecx, message 			; the string to write 
+    45 0000000F BA08000000              	mov edx, message_length 	; the length of the string 		
+    46 00000014 CD80                    	int 0x80 					; invoke the system call 
+    47                                  
+    48                                  
+    49                                  	; exit the program 
+    50 00000016 B801000000              	mov eax, 0x1 				; exit system call is 0x1 
+    51 0000001B BB00000000              	mov ebx, 0 					; exit code is 0 (return 0) 
+    52 00000020 CD80                    	int 0x80 					; Comment out and see!  
+    53                                  
+    54                                  	; note that int is NOT the right way to do things!   
+    55                                  	; (more on this later)
+    56                                  
+    57                                  
+    58                                  ; data section here. We can also move it above .code 
+    59                                  SECTION .data: 
+    60                                  	; 0xA is new line, 0x0 is null terminator 
+    61 00000000 48656C6C6F210A00        	message: db "Hello!",  0xA,  0x0 
+    62                                  	message_length: equ $-message 
+    63                                  
+    64                                  	; message_length: equ 8 
+    65                                  	; .... is exactly the same as 
+    66                                  	; #define message_length 8 
+    67                                  	
+    68                                  
+    69                                  
+    70                                  ; Some useful ELF details 
+    71                                  ; readelf -a c05-01.o 		; shows everything 
+    72                                  
+    73                                  ; readelf -h c05-01.o		; shows headers 
+    74                                  ; readelf -S c05-01.o     	; shows sections 
+    75                                  
+    76                                  ; readelf -x 2 c05-01.o		; shows section number 2 
+    77                                  ; readelf -x 2 c05-01  		; see the difference between above and this 
+    78                                  
+    79                                  
+    80                                  
+    81                                  
+    82                                  
+    83                                  ; View program in GDB 
+    84                                  
+    85                                  ; gdb ./c05-01 
+    86                                  ; layout regs       ; shows registers and disassembled code 
+    87                                  ; starti 			; start the program interactively 
+    88                                  ; si 				; execute one machine instruction 
+    89                                  ; quit 				; exit GDB 
+    90                                  
